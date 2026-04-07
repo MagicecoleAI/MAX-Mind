@@ -1,8 +1,8 @@
 {
-  "name": "xmind",
+  "name": "max-mind",
   "version": "0.1.0",
   "private": true,
-  "description": "Mind mapping application",
+  "description": "MAX Mind - magicecole AI Transformation Mind mapping application",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
