@@ -1,5 +1,10 @@
 # MAX Mind 파일 포맷
 
+> **최종 수정**: 2026-04-18 · **담당**: @magic · **상태**: 🟢 최신
+> 상위 문서: [CLAUDE.md](../../CLAUDE.md) · [docs/INDEX.md](../INDEX.md)
+
+---
+
 ## 개요
 
 MAX Mind는 `.xmind` 확장자의 ZIP 아카이브를 파일 포맷으로 사용한다.
