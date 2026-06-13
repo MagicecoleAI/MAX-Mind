@@ -213,56 +213,64 @@
       return first ? { kind: first, label: "다운로드", note: "사용 환경에 맞는 파일을 아래에서 확인하세요" } : null;
     }
 
-    async function init() {
-      const versionBadge = document.getElementById("version-badge");
-      const primaryBtn = document.getElementById("primary-btn");
-      const primaryLabel = document.getElementById("primary-label");
-      const primaryHint = document.getElementById("primary-hint");
+    const versionBadge = document.getElementById("version-badge");
+    const primaryBtn = document.getElementById("primary-btn");
+    const primaryLabel = document.getElementById("primary-label");
+    const primaryHint = document.getElementById("primary-hint");
 
+    // 항상 최신 릴리스를 가져온다(브라우저/CDN 캐시 회피). 빌드 직후 반영을 위해 no-store.
+    async function fetchLatest() {
+      const res = await fetch(API, { cache: "no-store", headers: { Accept: "application/vnd.github+json" } });
+      if (!res.ok) throw new Error("no release");
+      return res.json();
+    }
+
+    // 릴리스를 화면에 반영하고, 아직 못 찾은 에셋 종류 목록을 반환한다.
+    function applyRelease(rel) {
+      const assets = rel.assets || [];
+      const found = {};
+      for (const [kind, match] of Object.entries(MATCHERS)) {
+        const a = assets.find((x) => match(x.name));
+        if (a) found[kind] = a.browser_download_url;
+      }
+      versionBadge.textContent = rel.tag_name ? `최신 버전 ${rel.tag_name}` : "최신 버전";
+
+      // 찾은 종류만 활성화(못 찾은 것은 비활성 유지 → 폴링으로 나중에 활성화)
+      document.querySelectorAll(".dl[data-kind]").forEach((el) => {
+        const url = found[el.dataset.kind];
+        if (url) enableLink(el, url);
+      });
+
+      const pick = detectPrimary(found);
+      if (pick && found[pick.kind]) {
+        primaryLabel.textContent = pick.label;
+        primaryBtn.href = found[pick.kind];
+        primaryBtn.removeAttribute("aria-disabled");
+        primaryHint.textContent = pick.note || "";
+      }
+      return Object.keys(MATCHERS).filter((k) => !found[k]);
+    }
+
+    // 일부 플랫폼이 아직 빌드 중일 수 있으므로, 모두 활성화될 때까지 주기적으로 재조회한다.
+    async function poll(attempt) {
       try {
-        const res = await fetch(API, { headers: { Accept: "application/vnd.github+json" } });
-        if (!res.ok) throw new Error("no release");
-        const rel = await res.json();
-        const assets = rel.assets || [];
-        versionBadge.textContent = rel.tag_name ? `최신 버전 ${rel.tag_name}` : "최신 버전";
-
-        // 종류별 에셋 매칭
-        const found = {};
-        for (const [kind, match] of Object.entries(MATCHERS)) {
-          const a = assets.find((x) => match(x.name));
-          if (a) found[kind] = a.browser_download_url;
-        }
-
-        // 카드 링크 활성화
-        document.querySelectorAll(".dl[data-kind]").forEach((el) => {
-          const url = found[el.dataset.kind];
-          if (url) enableLink(el, url);
-          else { el.querySelector(".ext").after(document.createTextNode("")); el.textContent = "준비 중"; }
-        });
-
-        // 추천 버튼
-        const pick = detectPrimary(found);
-        if (pick) {
-          primaryLabel.textContent = pick.label;
-          primaryBtn.href = found[pick.kind];
-          primaryBtn.removeAttribute("aria-disabled");
-          primaryHint.textContent = pick.note || "";
-        } else {
+        const missing = applyRelease(await fetchLatest());
+        if (missing.length === 0) return; // 모든 플랫폼 활성화 완료 → 폴링 종료
+        if (primaryBtn.hasAttribute("aria-disabled")) {
           primaryLabel.textContent = "릴리스 준비 중";
-          primaryHint.innerHTML = `아직 게시된 설치 파일이 없습니다. <a href="${RELEASES_URL}">릴리스 페이지</a>를 확인하세요.`;
         }
+        primaryHint.textContent = `일부 플랫폼 빌드가 진행 중입니다 — 완료되면 자동으로 활성화됩니다 (${missing.length}종 남음)`;
       } catch (e) {
-        // 릴리스가 아직 없거나 API 실패 → 릴리스 페이지로 유도
         versionBadge.textContent = "릴리스 대기 중";
         primaryLabel.textContent = "릴리스 페이지로 이동";
         primaryBtn.href = RELEASES_URL;
         primaryBtn.removeAttribute("aria-disabled");
-        primaryHint.innerHTML = `아직 게시된 설치 파일이 없습니다. 빌드가 완료되면 이 페이지에서 바로 받을 수 있습니다.`;
-        document.querySelectorAll(".dl[data-kind]").forEach((el) => { enableLink(el, RELEASES_URL); });
+        primaryHint.textContent = "빌드가 완료되면 이 페이지에서 바로 받을 수 있습니다…";
       }
+      if (attempt < 60) setTimeout(() => poll(attempt + 1), 20000); // 20초 간격, 최대 약 20분
     }
 
-    init();
+    poll(0);
   </script>
 </body>
 </html>
