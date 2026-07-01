@@ -231,6 +231,14 @@ export function MindMapCanvas() {
       let isDragging = false;
 
       const handleDragMove = (moveEvent: MouseEvent) => {
+        // Safety net: if the mouse button was released outside the window,
+        // no mouseup event reaches us — detect it here and finalize the drag
+        // so the listeners don't leak and keep hijacking future input.
+        if (moveEvent.buttons === 0) {
+          handleDragUp();
+          return;
+        }
+
         const dx = moveEvent.clientX - startScreenX;
         const dy = moveEvent.clientY - startScreenY;
 
@@ -344,6 +352,15 @@ export function MindMapCanvas() {
       let isMarquee = false;
 
       const handleMarqueeMove = (moveEvent: MouseEvent) => {
+        // Safety net: if the mouse button was released outside the window,
+        // no mouseup event reaches us — detect it here and finalize the
+        // marquee so the listeners don't leak and keep re-selecting nodes
+        // on every future mouse movement.
+        if (moveEvent.buttons === 0) {
+          handleMarqueeUp();
+          return;
+        }
+
         const rect = canvasRef.current!.getBoundingClientRect();
         const currentWorld = renderer.camera.screenToWorld(
           moveEvent.clientX - rect.left,
