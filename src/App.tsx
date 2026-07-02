@@ -9,6 +9,7 @@ import { OutlinerView } from './components/Outliner/OutlinerView';
 import { SearchBar } from './components/SearchBar';
 import { SheetTabs } from './components/SheetTabs';
 import { CommandPalette } from './components/CommandPalette';
+import { AboutDialog } from './components/AboutDialog';
 import { useUIStore } from './store/uiStore';
 import { useDocumentStore } from './store/documentStore';
 import { openFile, openFileByPath, saveFile, newFile } from './services/tauriBridge';
@@ -60,6 +61,7 @@ function App() {
   const darkMode = useUIStore((s) => s.darkMode);
   const [showSearch, setShowSearch] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   // Apply dark mode class to <html>
   useEffect(() => {
@@ -130,6 +132,9 @@ function App() {
         case 'quit':
           handleQuit();
           break;
+        case 'about':
+          setShowAbout(true);
+          break;
       }
     });
 
@@ -171,6 +176,7 @@ function App() {
           {showSearch && <SearchBar onClose={() => setShowSearch(false)} />}
         </div>
         <ZenModeOverlay />
+        {showAbout && <AboutDialog onClose={() => setShowAbout(false)} />}
       </div>
     );
   }
@@ -187,6 +193,7 @@ function App() {
       </div>
       <SheetTabs />
       {showCommandPalette && <CommandPalette onClose={() => setShowCommandPalette(false)} />}
+      {showAbout && <AboutDialog onClose={() => setShowAbout(false)} />}
     </div>
   );
 }

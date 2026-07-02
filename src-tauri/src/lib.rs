@@ -35,6 +35,9 @@ pub fn run() {
                 .accelerator("CmdOrCtrl+Q")
                 .build(app)?;
 
+            let about = MenuItemBuilder::with_id("about", "About MAX Mind")
+                .build(app)?;
+
             let undo = MenuItemBuilder::with_id("undo", "Undo")
                 .accelerator("CmdOrCtrl+Z")
                 .build(app)?;
@@ -62,7 +65,7 @@ pub fn run() {
 
             // App menu (macOS: first menu is the app name menu)
             let app_menu = SubmenuBuilder::new(app, "MAX Mind")
-                .item(&PredefinedMenuItem::about(app, Some("About MAX Mind"), None)?)
+                .item(&about)
                 .separator()
                 .item(&PredefinedMenuItem::hide(app, None)?)
                 .item(&PredefinedMenuItem::hide_others(app, None)?)
@@ -121,6 +124,7 @@ pub fn run() {
                     "undo" => { let _ = app_handle.emit("menu-event", "undo"); }
                     "redo" => { let _ = app_handle.emit("menu-event", "redo"); }
                     "quit" => { let _ = app_handle.emit("menu-event", "quit"); }
+                    "about" => { let _ = app_handle.emit("menu-event", "about"); }
                     "clear_recent" => {
                         recent_files::clear_recent_files();
                         let _ = app_handle.emit("menu-event", "recent_cleared");
